@@ -15,6 +15,20 @@ const itemSchema = new mongoose.Schema({
     qty: Number,
     linePaidPaise: Number,
 });
+// Shipment ka ek event (jaise "Shipped", "In transit")
+const eventSchema = new mongoose.Schema({
+    status: String,
+    location: String,
+    note: String,
+    at: Date,
+}, { _id: false });
+
+const shipmentSchema = new mongoose.Schema({
+    carrier: String,
+    trackingNumber: String,
+    eta: Date,
+    events: [eventSchema],
+}, { _id: false });
 
 const orderSchema = new mongoose.Schema({
     orderId: { type: String, unique: true, required: true },
@@ -22,6 +36,7 @@ const orderSchema = new mongoose.Schema({
     status: { type: String, required: true },
     totalPaise: { type: Number, required: true },
     items: [itemSchema],
+    shipment: shipmentSchema,
     createdAt: { type: Date, default: Date.now },
 });
 
