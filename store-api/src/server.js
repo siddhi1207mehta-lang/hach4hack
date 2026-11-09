@@ -76,6 +76,31 @@ app.get('/api/v1/orders/:id', requireAuth, async (req, res) => {
     res.json(o);
 });
 
+// ---------- SHIPMENT (sirf apne order ka) ----------
+app.get('/api/v1/orders/:id/shipment', requireAuth, async (req, res) => {
+    // Ownership wahi rule: doosre ka order ya na-maujood = same 404
+    const order = await Order.findOne({
+        orderId: req.params.id,
+        customerId: req.user.customer_id,
+    }).lean();
+    if (!order || !order.shipment) return fail(req, res, 404, 'not_found', 'Order not found');
+
+    const s = order.shipment;
+    // delayed = ETA nikal gaya aur abhi delivered nahi hua
+    const delayed = order.status !== 'delivered' && s.eta && new Date(s.eta) < new Date();
+    res.json({
+        orderId: order.orderId,
+        status: order.status,
+        carrier: s.carrier,
+        trackingNumber: s.trackingNumber,
+        eta: s.eta,
+        delayed: Boolean(delayed),
+        events: s.events,
+        simulated: true,
+    });
+});
+
+// Ye catch-all HAMESHA sabse last mein (saare routes ke neeche)
 app.use((req, res) => fail(req, res, 404, 'not_found', 'Route not found'));
 
 await mongoose.connect(process.env.MONGO_URI);
