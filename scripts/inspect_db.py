@@ -110,6 +110,17 @@ def inspect_db() -> None:
             else:
                 print(f"{sc:<8} {order_id:<10} NOT FOUND")
 
+        # Store audit log entries if any
+        audit_count = session.scalar(select(func.count(StoreAudit.id)))
+        if audit_count > 0:
+            print(f"\n=== Store Audit Rows ({audit_count} total) ===")
+            print(f"{'Timestamp':<20} {'Actor':<12} {'Action':<10} {'Outcome':<10} {'Resource':<25} {'Request ID'}")
+            print("-" * 95)
+            audits = session.scalars(select(StoreAudit).order_by(StoreAudit.id.desc()).limit(10)).all()
+            for a in audits:
+                ts_str = a.ts.strftime("%Y-%m-%d %H:%M:%S") if hasattr(a.ts, "strftime") else str(a.ts)
+                print(f"{ts_str:<20} {a.actor:<12} {a.action:<10} {a.outcome:<10} {a.resource:<25} {a.request_id}")
+
 
 if __name__ == "__main__":
     inspect_db()

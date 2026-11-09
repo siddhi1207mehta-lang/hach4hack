@@ -3,19 +3,19 @@
 Purpose: one place where a new AI session or teammate learns what exists, what broke, how it was fixed and why decisions were made. Keep it short, true and current. Updated at the end of EVERY stage.
 
 ## 1. Snapshot (update every stage)
-- Last updated: 2026-11-09 19:30 IST
-- Current phase and stage: Phase 1, Stage 4 completed (Authentication)
+- Last updated: 2026-11-09 20:00 IST
+- Current phase and stage: Phase 1, Stage 5 completed (Read-only store endpoints)
 - Last green gate: none. Last git tag: none
 - Run: just dev (web 5173, api 8000, agent placeholder 8001)
-- Test: just test (39 passed), just lint (clean), store-web npm run lint (clean), npm test (2 passed), npm run build (clean), just verify-seed (17 passed)
+- Test: just test (50 passed), just lint (clean), store-web npm run lint (clean), npm test (2 passed), npm run build (clean), just verify-seed (17 passed)
 - Demo logins: password Demo@12345. aarav.mehta@example.test (customer), priya.sharma@nestkart.test (seller owner), kiran.rao@nestkart.test (seller staff)
 - Keys needed right now: none
 
 ## 2. Architecture map (fill in as you build)
-- store-api/app/ : main.py, config.py, clock.py, errors.py, middleware.py, logging.py, models.py, discount.py, auth.py, deps.py
+- store-api/app/ : main.py, config.py, clock.py, errors.py, middleware.py, logging.py, models.py, discount.py, auth.py, deps.py, audit.py, schemas.py, orders.py, admin.py
 - store-api/ : pyproject.toml, uv.lock, db.py (SQLite WAL/foreign_keys/busy_timeout/BEGIN IMMEDIATE recipe)
 - store-api/keys/ : jwt_private.pem, jwt_public.pem (git-ignored RS256 key pair)
-- store-api/tests/ : test_skeleton.py (3 passing tests), test_schema_and_seed.py (5 passing tests), test_auth.py (31 passing tests)
+- store-api/tests/ : test_skeleton.py (3 passing tests), test_schema_and_seed.py (5 passing tests), test_auth.py (31 passing tests), test_orders_and_admin.py (11 passing tests)
 - store-web/src/ : App.tsx, App.test.tsx, main.tsx, index.css, api/client.ts, api/schema.d.ts
 - store-web/ : package.json, package-lock.json, vite.config.ts, tailwind.config.js, tsconfig.json
 - agent/ : main.py (placeholder on 8001 with GET /healthz)
@@ -34,8 +34,26 @@ Purpose: one place where a new AI session or teammate learns what exists, what b
 | D6 | 2026-11-09 | Partial unique index on return_items(item_id) where status NOT IN ('completed', 'cancelled', 'rejected') | Enforces at the database layer that at most one active return exists per order item | Application-only validation |
 | D7 | 2026-11-09 | RS256 JWT with public JWKS & opaque rotating refresh cookies with double-submit CSRF | Secure asymmetric tokens; agent holds only public key; browser tokens never stored in localStorage | HS256 shared secret, localStorage tokens |
 | D8 | 2026-11-09 | Generic error messages on login failures ("Invalid email or password") + rate limiting/lockout | Prevents user enumeration and brute force attacks | Specific user-not-found errors |
+| D9 | 2026-11-09 | Uniform 404 with exact identical body for non-owned and missing orders | Prevents IDOR enumeration and timing attacks; logs denial to store_audit | Differentiating 403 on resource routes |
 
 ## 4. Build log (newest first)
+### Stage 5 — Read-only store endpoints — 2026-11-09
+- Built: Orders, shipments, refundable calculation, seller views, and audit logging for denied access conforming to spec sections 4, 5, 6, 16.
+  - `GET /api/v1/orders` (own orders only via customer token, cursor pagination with limit and base64 cursor, status filter, search).
+  - `GET /api/v1/orders/{id}` (ownership enforcement with uniform 404 and store_audit denial log).
+  - `GET /api/v1/orders/{id}/shipment` (carrier, tracking, events, derived delayed flag: `eta_at < Clock.now()` and not delivered).
+  - `GET /api/v1/orders/{id}/refundable?items=ITEM_ID:QTY,ITEM_ID:QTY` (calculates remaining item quantity and max_refundable_paise net of active refunds based on line_paid_paise).
+  - `GET /api/v1/orders/{id}/refunds` (returns list of refunds for the order).
+  - `GET /api/v1/products` (public catalog endpoint).
+  - `GET /api/v1/admin/orders` & `/api/v1/admin/orders/{id}` (seller_owner, seller_staff, agent-monitor with orders:read_all; customer gets 403 and denial logged).
+  - `GET /api/v1/admin/customers/{id}` (customer summary: returns_30d = 4 for C003, refund_ratio_90d, account age).
+  - Store audit table integration (`StoreAudit` logging with X-Request-ID propagation).
+  - `just inspect` formatted display for `store_audit` entries.
+- Files: store-api/app/orders.py, store-api/app/admin.py, store-api/app/schemas.py, store-api/app/audit.py, store-api/app/deps.py, store-api/app/main.py, store-api/app/auth.py, scripts/inspect_db.py, store-api/tests/test_orders_and_admin.py, contracts/openapi-store.json, store-web/src/api/schema.d.ts
+- Tests: 50 pytest passed (11 orders & admin, 31 auth, 5 schema & seed, 3 skeleton); Vitest: 2 passed; Vite build: passed; ruff & eslint: clean.
+- Verified: All Stage 5 verification scenarios (Aarav order list & shipment, Diya uniform 404 for ORD-1042 vs ORD-9999, Aarav 403 on admin routes, Priya C003 returns_30d = 4, Diya ORD-2037 delayed = True, Diya ORD-2040 refundable = 50000, store_audit rows in `just inspect`).
+- Commit: pending git commit
+
 ### Stage 4 — Authentication — 2026-11-09
 - Built: Authentication system conforming to spec sections 4, 6, 12, 16. RS256 JWT access tokens (15 min) with claims sub, role, customer_id, aud=[nestkart-api, sellershield-agent], iss, exp, jti, auth_time. Public JWKS endpoint (`/.well-known/jwks.json`) exposing public RSA key only (no private components). Rotating opaque refresh tokens (7 days) stored as hashes, delivered via httpOnly SameSite=Lax cookie with double-submit CSRF token validation. POST /api/v1/auth/login with argon2id verification, 5 attempts/min rate limit per IP+email and 15-minute lock after 10 failures. POST /api/v1/auth/refresh, POST /api/v1/auth/logout, GET /api/v1/auth/me, POST /api/v1/auth/token (OAuth client-credentials for agent-executor and agent-monitor with scoped service tokens). Security headers middleware (CSP with frame-ancestors none, nosniff, DENY frame options), 1 MB body size limiter, restricted CORS allowlist. `just token <email>` recipe via `scripts/get_token.py`. 31 pytest tests in `store-api/tests/test_auth.py`.
 - Files: store-api/app/auth.py, store-api/app/deps.py, store-api/app/middleware.py, store-api/app/main.py, store-api/app/config.py, scripts/get_token.py, store-api/tests/test_auth.py, justfile, contracts/openapi-store.json, store-web/src/api/schema.d.ts
@@ -66,6 +84,8 @@ Purpose: one place where a new AI session or teammate learns what exists, what b
 ## 5. Bug and fix log (newest first)
 | ID | Date | Symptom (what I saw) | Root cause | Fix | Regression test | Files |
 | --- | --- | --- | --- | --- | --- | --- |
+| B-005 | 2026-11-09 | AttributeError: 'list' object has no attribute 'split' in get_current_principal | _mint_service_token payload scopes were list while principal extraction called .split() | Handle both list and string types for scopes claim | test_seller_can_read_any_order | store-api/app/auth.py |
+| B-004 | 2026-11-09 | TypeError: can't subtract offset-naive and offset-aware datetimes | SQLite DateTime columns are naive datetimes while Clock.now() is UTC timezone-aware | Convert both datetimes via `_to_utc` helper and use naive datetimes for SQL range filters | test_orders_and_admin.py | store-api/app/admin.py, store-api/app/orders.py |
 | B-003 | 2026-11-09 | AttributeError: 'inspect' has no attribute 'signature' during seed/inspect | `scripts/token.py` shadowed Python standard library `token` module | Renamed to `scripts/get_token.py` | just reset, test_auth.py | scripts/get_token.py, justfile |
 | B-002 | 2026-11-09 | WinError 32 permission denied deleting store.db during reset | SQLite file handle held open by DB Browser or pooled connection on Windows | Dispose engine and catch PermissionError to drop/recreate tables cleanly | test_seed_loads | scripts/seed.py |
 | B-001 | 2026-11-09 | TestClient / pytest asyncio blocked in sandbox | Windows sandbox isolates network loopback sockets needed by asyncio worker threads | Run test commands with network/socket access permitted | test_skeleton.py | store-api/tests/test_skeleton.py |

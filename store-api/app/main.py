@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import db
+from app.admin import router as admin_router
 from app.auth import router as auth_router
 from app.clock import Clock
 from app.config import settings
@@ -21,6 +22,7 @@ from app.middleware import (
     RequestIdLoggingMiddleware,
     SecurityHeadersMiddleware,
 )
+from app.orders import router as orders_router
 
 
 class ClockResponse(BaseModel):
@@ -74,6 +76,10 @@ app.add_middleware(RequestIdLoggingMiddleware)
 
 # Auth router
 app.include_router(auth_router)
+
+# Orders and Admin routers
+app.include_router(orders_router)
+app.include_router(admin_router)
 
 # Custom Error Handlers
 app.add_exception_handler(AppException, app_exception_handler)

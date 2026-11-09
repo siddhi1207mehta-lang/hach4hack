@@ -234,6 +234,508 @@
         }
       }
     },
+    "/api/v1/products": {
+      "get": {
+        "tags": [
+          "Orders",
+          "Products"
+        ],
+        "summary": "List products",
+        "operationId": "list_products_api_v1_products_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProductResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Products Api V1 Products Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "List customer orders",
+        "operationId": "list_orders_api_v1_orders_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{order_id}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get order details",
+        "operationId": "get_order_api_v1_orders__order_id__get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{order_id}/shipment": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get order shipment details",
+        "operationId": "get_order_shipment_api_v1_orders__order_id__shipment_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{order_id}/refundable": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get refundable amount calculation",
+        "operationId": "get_order_refundable_api_v1_orders__order_id__refundable_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          },
+          {
+            "name": "items",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated ITEM_ID:QTY pairs, e.g. ITEM-1048-1:1,ITEM-1048-2:2",
+              "title": "Items"
+            },
+            "description": "Comma-separated ITEM_ID:QTY pairs, e.g. ITEM-1048-1:1,ITEM-1048-2:2"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundableResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{order_id}/refunds": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get refunds for an order",
+        "operationId": "get_order_refunds_api_v1_orders__order_id__refunds_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RefundResponse"
+                  },
+                  "title": "Response Get Order Refunds Api V1 Orders  Order Id  Refunds Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "List all store orders (seller view)",
+        "operationId": "admin_list_orders_api_v1_admin_orders_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Customer Id"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders/{order_id}": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get any store order (seller view)",
+        "operationId": "admin_get_order_api_v1_admin_orders__order_id__get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/customers/{customer_id}": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get customer summary (seller view)",
+        "operationId": "admin_get_customer_summary_api_v1_admin_customers__customer_id__get",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Customer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAdminSummaryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/healthz": {
       "get": {
         "tags": [
@@ -317,6 +819,65 @@
           "mode"
         ],
         "title": "ClockResponse"
+      },
+      "CustomerAdminSummaryResponse": {
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "title": "Customer Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Joined At"
+          },
+          "account_age": {
+            "type": "string",
+            "title": "Account Age"
+          },
+          "account_age_days": {
+            "type": "integer",
+            "title": "Account Age Days"
+          },
+          "returns_30d": {
+            "type": "integer",
+            "title": "Returns 30D"
+          },
+          "refund_ratio_90d": {
+            "type": "number",
+            "title": "Refund Ratio 90D"
+          },
+          "total_orders": {
+            "type": "integer",
+            "title": "Total Orders"
+          },
+          "total_spend_paise": {
+            "type": "integer",
+            "title": "Total Spend Paise"
+          },
+          "total_refunded_paise": {
+            "type": "integer",
+            "title": "Total Refunded Paise"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer_id",
+          "full_name",
+          "joined_at",
+          "account_age",
+          "account_age_days",
+          "returns_30d",
+          "refund_ratio_90d",
+          "total_orders",
+          "total_spend_paise",
+          "total_refunded_paise"
+        ],
+        "title": "CustomerAdminSummaryResponse"
       },
       "HTTPValidationError": {
         "properties": {
@@ -440,6 +1001,247 @@
         ],
         "title": "MeResponse"
       },
+      "OrderItemResponse": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "order_id": {
+            "type": "string",
+            "title": "Order Id"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "name_snapshot": {
+            "type": "string",
+            "title": "Name Snapshot"
+          },
+          "category_snapshot": {
+            "type": "string",
+            "title": "Category Snapshot"
+          },
+          "qty": {
+            "type": "integer",
+            "title": "Qty"
+          },
+          "unit_price_paise": {
+            "type": "integer",
+            "title": "Unit Price Paise"
+          },
+          "discount_alloc_paise": {
+            "type": "integer",
+            "title": "Discount Alloc Paise"
+          },
+          "line_paid_paise": {
+            "type": "integer",
+            "title": "Line Paid Paise"
+          },
+          "flags_json": {
+            "type": "string",
+            "title": "Flags Json",
+            "default": "{}"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "order_id",
+          "sku",
+          "name_snapshot",
+          "category_snapshot",
+          "qty",
+          "unit_price_paise",
+          "discount_alloc_paise",
+          "line_paid_paise"
+        ],
+        "title": "OrderItemResponse"
+      },
+      "OrderListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "has_more"
+        ],
+        "title": "OrderListResponse"
+      },
+      "OrderResponse": {
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "title": "Order Id"
+          },
+          "customer_id": {
+            "type": "string",
+            "title": "Customer Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "payment_method": {
+            "type": "string",
+            "title": "Payment Method"
+          },
+          "payment_status": {
+            "type": "string",
+            "title": "Payment Status"
+          },
+          "subtotal_paise": {
+            "type": "integer",
+            "title": "Subtotal Paise"
+          },
+          "discount_paise": {
+            "type": "integer",
+            "title": "Discount Paise"
+          },
+          "shipping_fee_paise": {
+            "type": "integer",
+            "title": "Shipping Fee Paise"
+          },
+          "total_paise": {
+            "type": "integer",
+            "title": "Total Paise"
+          },
+          "placed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Placed At"
+          },
+          "shipped_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shipped At"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          },
+          "cancelled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled At"
+          },
+          "ship_to_json": {
+            "type": "string",
+            "title": "Ship To Json",
+            "default": "{}"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderItemResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "default": []
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_id",
+          "customer_id",
+          "status",
+          "payment_method",
+          "payment_status",
+          "subtotal_paise",
+          "discount_paise",
+          "shipping_fee_paise",
+          "total_paise",
+          "placed_at"
+        ],
+        "title": "OrderResponse"
+      },
+      "ProductResponse": {
+        "properties": {
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "price_paise": {
+            "type": "integer",
+            "title": "Price Paise"
+          },
+          "hygiene_sensitive": {
+            "type": "boolean",
+            "title": "Hygiene Sensitive"
+          },
+          "final_sale": {
+            "type": "boolean",
+            "title": "Final Sale"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sku",
+          "name",
+          "category",
+          "price_paise",
+          "hygiene_sensitive",
+          "final_sale"
+        ],
+        "title": "ProductResponse"
+      },
       "ReadyzResponse": {
         "properties": {
           "status": {
@@ -485,6 +1287,266 @@
           "access_token"
         ],
         "title": "RefreshResponse"
+      },
+      "RefundResponse": {
+        "properties": {
+          "refund_id": {
+            "type": "string",
+            "title": "Refund Id"
+          },
+          "order_id": {
+            "type": "string",
+            "title": "Order Id"
+          },
+          "return_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Id"
+          },
+          "customer_id": {
+            "type": "string",
+            "title": "Customer Id"
+          },
+          "amount_paise": {
+            "type": "integer",
+            "title": "Amount Paise"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "gateway_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gateway Ref"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "refund_id",
+          "order_id",
+          "customer_id",
+          "amount_paise",
+          "method",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RefundResponse"
+      },
+      "RefundableItemResponse": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "requested_qty": {
+            "type": "integer",
+            "title": "Requested Qty"
+          },
+          "remaining_qty": {
+            "type": "integer",
+            "title": "Remaining Qty"
+          },
+          "unit_price_paise": {
+            "type": "integer",
+            "title": "Unit Price Paise"
+          },
+          "line_paid_paise": {
+            "type": "integer",
+            "title": "Line Paid Paise"
+          },
+          "max_refundable_paise": {
+            "type": "integer",
+            "title": "Max Refundable Paise"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "sku",
+          "name",
+          "requested_qty",
+          "remaining_qty",
+          "unit_price_paise",
+          "line_paid_paise",
+          "max_refundable_paise"
+        ],
+        "title": "RefundableItemResponse"
+      },
+      "RefundableResponse": {
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "title": "Order Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RefundableItemResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "max_refundable_paise": {
+            "type": "integer",
+            "title": "Max Refundable Paise"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_id",
+          "items",
+          "max_refundable_paise"
+        ],
+        "title": "RefundableResponse"
+      },
+      "ShipmentEventResponse": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "shipment_id": {
+            "type": "string",
+            "title": "Shipment Id"
+          },
+          "ts": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ts"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "shipment_id",
+          "ts",
+          "status",
+          "location",
+          "note"
+        ],
+        "title": "ShipmentEventResponse"
+      },
+      "ShipmentResponse": {
+        "properties": {
+          "shipment_id": {
+            "type": "string",
+            "title": "Shipment Id"
+          },
+          "order_id": {
+            "type": "string",
+            "title": "Order Id"
+          },
+          "carrier": {
+            "type": "string",
+            "title": "Carrier"
+          },
+          "tracking_no": {
+            "type": "string",
+            "title": "Tracking No"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "eta_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eta At"
+          },
+          "last_event_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Event At"
+          },
+          "script_id": {
+            "type": "string",
+            "title": "Script Id"
+          },
+          "delayed": {
+            "type": "boolean",
+            "title": "Delayed"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ShipmentEventResponse"
+            },
+            "type": "array",
+            "title": "Events",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "shipment_id",
+          "order_id",
+          "carrier",
+          "tracking_no",
+          "status",
+          "script_id",
+          "delayed"
+        ],
+        "title": "ShipmentResponse"
       },
       "TokenRequest": {
         "properties": {

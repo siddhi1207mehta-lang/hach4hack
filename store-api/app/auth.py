@@ -617,11 +617,13 @@ def get_current_principal(request: Request) -> dict[str, Any] | None:
     # Determine principal type
     if "client_id" in payload:
         # Service token
+        raw_scopes = payload.get("scopes", "")
+        scopes_list = raw_scopes if isinstance(raw_scopes, list) else raw_scopes.split()
         return {
             "type": "service",
             "sub": payload["sub"],
             "client_id": payload["client_id"],
-            "scopes": payload.get("scopes", "").split(),
+            "scopes": scopes_list,
         }
     else:
         # User token — look up display_name and email

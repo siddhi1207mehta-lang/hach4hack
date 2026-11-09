@@ -112,6 +112,159 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List products */
+        get: operations["list_products_api_v1_products_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List customer orders */
+        get: operations["list_orders_api_v1_orders_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get order details */
+        get: operations["get_order_api_v1_orders__order_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{order_id}/shipment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get order shipment details */
+        get: operations["get_order_shipment_api_v1_orders__order_id__shipment_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{order_id}/refundable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get refundable amount calculation */
+        get: operations["get_order_refundable_api_v1_orders__order_id__refundable_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{order_id}/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get refunds for an order */
+        get: operations["get_order_refunds_api_v1_orders__order_id__refunds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all store orders (seller view) */
+        get: operations["admin_list_orders_api_v1_admin_orders_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get any store order (seller view) */
+        get: operations["admin_get_order_api_v1_admin_orders__order_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{customer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get customer summary (seller view) */
+        get: operations["admin_get_customer_summary_api_v1_admin_customers__customer_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -174,6 +327,32 @@ export interface components {
             /** Mode */
             mode: string;
         };
+        /** CustomerAdminSummaryResponse */
+        CustomerAdminSummaryResponse: {
+            /** Customer Id */
+            customer_id: string;
+            /** Full Name */
+            full_name: string;
+            /**
+             * Joined At
+             * Format: date-time
+             */
+            joined_at: string;
+            /** Account Age */
+            account_age: string;
+            /** Account Age Days */
+            account_age_days: number;
+            /** Returns 30D */
+            returns_30d: number;
+            /** Refund Ratio 90D */
+            refund_ratio_90d: number;
+            /** Total Orders */
+            total_orders: number;
+            /** Total Spend Paise */
+            total_spend_paise: number;
+            /** Total Refunded Paise */
+            total_refunded_paise: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -224,6 +403,103 @@ export interface components {
             /** Display Name */
             display_name: string;
         };
+        /** OrderItemResponse */
+        OrderItemResponse: {
+            /** Item Id */
+            item_id: string;
+            /** Order Id */
+            order_id: string;
+            /** Sku */
+            sku: string;
+            /** Name Snapshot */
+            name_snapshot: string;
+            /** Category Snapshot */
+            category_snapshot: string;
+            /** Qty */
+            qty: number;
+            /** Unit Price Paise */
+            unit_price_paise: number;
+            /** Discount Alloc Paise */
+            discount_alloc_paise: number;
+            /** Line Paid Paise */
+            line_paid_paise: number;
+            /**
+             * Flags Json
+             * @default {}
+             */
+            flags_json: string;
+        };
+        /** OrderListResponse */
+        OrderListResponse: {
+            /** Items */
+            items: components["schemas"]["OrderResponse"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+            /** Has More */
+            has_more: boolean;
+        };
+        /** OrderResponse */
+        OrderResponse: {
+            /** Order Id */
+            order_id: string;
+            /** Customer Id */
+            customer_id: string;
+            /** Status */
+            status: string;
+            /** Payment Method */
+            payment_method: string;
+            /** Payment Status */
+            payment_status: string;
+            /** Subtotal Paise */
+            subtotal_paise: number;
+            /** Discount Paise */
+            discount_paise: number;
+            /** Shipping Fee Paise */
+            shipping_fee_paise: number;
+            /** Total Paise */
+            total_paise: number;
+            /**
+             * Placed At
+             * Format: date-time
+             */
+            placed_at: string;
+            /** Shipped At */
+            shipped_at?: string | null;
+            /** Delivered At */
+            delivered_at?: string | null;
+            /** Cancelled At */
+            cancelled_at?: string | null;
+            /**
+             * Ship To Json
+             * @default {}
+             */
+            ship_to_json: string;
+            /**
+             * Items
+             * @default []
+             */
+            items: components["schemas"]["OrderItemResponse"][];
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+        };
+        /** ProductResponse */
+        ProductResponse: {
+            /** Sku */
+            sku: string;
+            /** Name */
+            name: string;
+            /** Category */
+            category: string;
+            /** Price Paise */
+            price_paise: number;
+            /** Hygiene Sensitive */
+            hygiene_sensitive: boolean;
+            /** Final Sale */
+            final_sale: boolean;
+        };
         /** ReadyzResponse */
         ReadyzResponse: {
             /** Status */
@@ -247,6 +523,107 @@ export interface components {
              * @default 900
              */
             expires_in: number;
+        };
+        /** RefundResponse */
+        RefundResponse: {
+            /** Refund Id */
+            refund_id: string;
+            /** Order Id */
+            order_id: string;
+            /** Return Id */
+            return_id?: string | null;
+            /** Customer Id */
+            customer_id: string;
+            /** Amount Paise */
+            amount_paise: number;
+            /** Method */
+            method: string;
+            /** Status */
+            status: string;
+            /** Gateway Ref */
+            gateway_ref?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** RefundableItemResponse */
+        RefundableItemResponse: {
+            /** Item Id */
+            item_id: string;
+            /** Sku */
+            sku: string;
+            /** Name */
+            name: string;
+            /** Requested Qty */
+            requested_qty: number;
+            /** Remaining Qty */
+            remaining_qty: number;
+            /** Unit Price Paise */
+            unit_price_paise: number;
+            /** Line Paid Paise */
+            line_paid_paise: number;
+            /** Max Refundable Paise */
+            max_refundable_paise: number;
+        };
+        /** RefundableResponse */
+        RefundableResponse: {
+            /** Order Id */
+            order_id: string;
+            /** Items */
+            items: components["schemas"]["RefundableItemResponse"][];
+            /** Max Refundable Paise */
+            max_refundable_paise: number;
+        };
+        /** ShipmentEventResponse */
+        ShipmentEventResponse: {
+            /** Event Id */
+            event_id: string;
+            /** Shipment Id */
+            shipment_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /** Status */
+            status: string;
+            /** Location */
+            location: string;
+            /** Note */
+            note: string;
+        };
+        /** ShipmentResponse */
+        ShipmentResponse: {
+            /** Shipment Id */
+            shipment_id: string;
+            /** Order Id */
+            order_id: string;
+            /** Carrier */
+            carrier: string;
+            /** Tracking No */
+            tracking_no: string;
+            /** Status */
+            status: string;
+            /** Eta At */
+            eta_at?: string | null;
+            /** Last Event At */
+            last_event_at?: string | null;
+            /** Script Id */
+            script_id: string;
+            /** Delayed */
+            delayed: boolean;
+            /**
+             * Events
+             * @default []
+             */
+            events: components["schemas"]["ShipmentEventResponse"][];
         };
         /** TokenRequest */
         TokenRequest: {
@@ -452,6 +829,284 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_products_api_v1_products_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponse"][];
+                };
+            };
+        };
+    };
+    list_orders_api_v1_orders_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+                status?: string | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_order_api_v1_orders__order_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_order_shipment_api_v1_orders__order_id__shipment_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_order_refundable_api_v1_orders__order_id__refundable_get: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated ITEM_ID:QTY pairs, e.g. ITEM-1048-1:1,ITEM-1048-2:2 */
+                items?: string | null;
+            };
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundableResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_order_refunds_api_v1_orders__order_id__refunds_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_orders_api_v1_admin_orders_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+                status?: string | null;
+                customer_id?: string | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_get_order_api_v1_admin_orders__order_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_get_customer_summary_api_v1_admin_customers__customer_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAdminSummaryResponse"];
                 };
             };
             /** @description Validation Error */
