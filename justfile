@@ -1,4 +1,4 @@
-set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
+set windows-shell := ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass", "-Command"]
 
 export UV_CACHE_DIR := invocation_directory() + "/.uv_cache"
 export UV_PYTHON_INSTALL_DIR := invocation_directory() + "/.uv_python"
@@ -10,9 +10,9 @@ default:
 setup:
     uv sync --project store-api
 
-# Start all services (store-api, agent, store-web)
+# Start all services (store-api 8000, agent 8001, store-web 5173)
 dev:
-    python -c "print('not built yet')"
+    uv run --project store-api python scripts/dev.py
 
 # Start store-api development server on port 8000
 dev-api:
@@ -28,7 +28,11 @@ lint:
 
 # Generate RS256 JWT key pair
 keys:
-    python -c "print('not built yet')"
+    uv run --project store-api python scripts/make_keys.py
+
+# Export OpenAPI contracts
+openapi:
+    uv run --project store-api python scripts/export_openapi.py
 
 # Seed store database
 seed:
@@ -44,10 +48,6 @@ inspect:
 
 # Verify seeded scenario data
 verify-seed:
-    python -c "print('not built yet')"
-
-# Export OpenAPI contracts
-openapi:
     python -c "print('not built yet')"
 
 # Generate auth token helper

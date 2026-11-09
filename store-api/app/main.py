@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import db
@@ -15,6 +16,21 @@ from app.errors import (
     validation_exception_handler,
 )
 from app.middleware import RequestIdLoggingMiddleware
+
+
+class ClockResponse(BaseModel):
+    now_utc: str
+    mode: str
+
+
+class HealthzResponse(BaseModel):
+    status: str
+
+
+class ReadyzResponse(BaseModel):
+    status: str
+    database: str
+    clock: str
 
 app = FastAPI(
     title="NestKart Store API",
@@ -44,13 +60,13 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
 
-@app.get("/healthz", summary="Liveness check", tags=["System"])
-def healthz() -> dict[str, str]:
-    return {"status": "ok"}
+@app.get("/healthz", summary="Liveness check", tags=["System"], response_model=HealthzResponse)
+def healthz() -> HealthzResponse:
+    return HealthzResponse(status="ok")
 
 
-@app.get("/readyz", summary="Readiness check", tags=["System"])
-def readyz() -> dict[str, str]:
+@app.get("/readyz", summary="Readiness check", tags=["System"], response_model=ReadyzResponse)
+def readyz() -> ReadyzResponse:
     # Check database
     try:
         with db.engine.connect() as conn:
@@ -66,13 +82,19 @@ def readyz() -> dict[str, str]:
     except Exception as e:
         raise UpstreamUnavailableException(message=f"Clock check failed: {e}")
 
-    return {
-        "status": "ready",
-        "database": db_status,
-        "clock": clock_status,
-    }
+    return ReadyzResponse(
+        status="ready",
+        database=db_status,
+        clock=clock_status,
+    )
 
 
-@app.get("/api/v1/clock", summary="Current store time", tags=["Clock"])
-def get_clock() -> dict[str, str]:
-    return Clock.get_info()
+@app.get(
+    "/api/v1/clock",
+    summary="Current store time",
+    tags=["Clock"],
+    response_model=ClockResponse,
+)
+def get_clock() -> ClockResponse:
+    info = Clock.get_info()
+    return ClockResponse(now_utc=info["now_utc"], mode=info["mode"])
