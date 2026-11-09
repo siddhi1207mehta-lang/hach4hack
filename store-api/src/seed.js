@@ -1,11 +1,13 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { User, Order } from './models.js';
+import { User, Order, Return, Counter } from './models.js';
 
 await mongoose.connect(process.env.MONGO_URI);
 await User.deleteMany({});
 await Order.deleteMany({});
+await Return.deleteMany({});
+await Counter.deleteMany({});
 
 const hash = await bcrypt.hash('Demo@12345', 12);
 await User.insertMany([
