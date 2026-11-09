@@ -36,23 +36,23 @@ openapi:
 
 # Seed store database
 seed:
-    python -c "print('not built yet')"
+    uv run --project store-api python scripts/seed.py
 
 # Reset database to initial state
 reset:
-    python -c "print('not built yet')"
+    uv run --project store-api python scripts/seed.py --reset
 
 # Inspect database contents
 inspect:
-    python -c "print('not built yet')"
+    uv run --project store-api python scripts/inspect_db.py
 
 # Verify seeded scenario data
 verify-seed:
-    python -c "print('not built yet')"
+    uv run --project store-api python scripts/verify_seed.py
 
-# Generate auth token helper
-token:
-    python -c "print('not built yet')"
+# Generate auth token for a seeded user (prints ONLY the token)
+token email:
+    @uv run --quiet --project store-api python scripts/get_token.py {{email}}
 
 # Money-path smoke test
 smoke-money:

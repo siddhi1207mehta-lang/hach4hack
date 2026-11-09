@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import db
+from app.auth import router as auth_router
 from app.clock import Clock
 from app.config import settings
 from app.errors import (
@@ -15,7 +16,11 @@ from app.errors import (
     http_exception_handler,
     validation_exception_handler,
 )
-from app.middleware import RequestIdLoggingMiddleware
+from app.middleware import (
+    BodySizeLimitMiddleware,
+    RequestIdLoggingMiddleware,
+    SecurityHeadersMiddleware,
+)
 
 
 class ClockResponse(BaseModel):
@@ -41,17 +46,34 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-# CORS
+# CORS — allowlist from config; explicit methods and headers (no wildcards)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Request-ID",
+        "X-CSRF-Token",
+        "Idempotency-Key",
+        "If-Match",
+    ],
+    expose_headers=["X-Request-ID"],
 )
+
+# Security headers (CSP, nosniff, frame-ancestors none)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Body size limit (1 MB)
+app.add_middleware(BodySizeLimitMiddleware)
 
 # Request ID and logging middleware
 app.add_middleware(RequestIdLoggingMiddleware)
+
+# Auth router
+app.include_router(auth_router)
 
 # Custom Error Handlers
 app.add_exception_handler(AppException, app_exception_handler)

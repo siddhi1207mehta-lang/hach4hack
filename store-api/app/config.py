@@ -9,8 +9,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     DEMO_MODE: bool = True
     DATABASE_URL: str = "sqlite:///data/store.db"
-    JWT_PRIVATE_KEY_PATH: str = "keys/ec_private.pem"
-    JWT_PUBLIC_KEY_PATH: str = "keys/ec_public.pem"
+    JWT_PRIVATE_KEY_PATH: str = "keys/jwt_private.pem"
+    JWT_PUBLIC_KEY_PATH: str = "keys/jwt_public.pem"
     JWT_ISSUER: str = "nestkart-api"
     WEBHOOK_SECRET: str = "fake_dev_webhook_secret_do_not_use_in_prod"
     AGENT_WEBHOOK_URL: str = "http://localhost:8001/v1/webhooks/store"
