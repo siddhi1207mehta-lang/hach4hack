@@ -54,6 +54,14 @@ const requireAuth = (req, res, next) => {
     }
 };
 
+// Role check: sirf allowed roles ko andar aane do, baaki ko 403
+const requireRole = (...roles) => (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+        return fail(req, res, 403, 'forbidden', 'You do not have access to this');
+    }
+    next();
+};
+
 app.get('/api/v1/auth/me', requireAuth, (req, res) =>
     res.json({ role: req.user.role, customer_id: req.user.customer_id })
 );
@@ -98,6 +106,23 @@ app.get('/api/v1/orders/:id/shipment', requireAuth, async (req, res) => {
         events: s.events,
         simulated: true,
     });
+});
+
+// ---------- SELLER (admin) ROUTES ----------
+// Ye /admin/ routes sirf seller_owner aur seller_staff ke liye hain.
+// Role galat ho to 403 (ye role-protected route hai, koi resource nahi).
+app.get('/api/v1/admin/orders', requireAuth, requireRole('seller_owner', 'seller_staff'), async (req, res) => {
+    const filter = {};
+    if (req.query.status) filter.status = String(req.query.status);
+    const orders = await Order.find(filter).sort({ createdAt: -1 }).limit(100).lean();
+    res.json({ items: orders.map(({ _id, __v, ...o }) => o) });
+});
+
+app.get('/api/v1/admin/orders/:id', requireAuth, requireRole('seller_owner', 'seller_staff'), async (req, res) => {
+    const order = await Order.findOne({ orderId: req.params.id }).lean();
+    if (!order) return fail(req, res, 404, 'not_found', 'Order not found');
+    const { _id, __v, ...o } = order;
+    res.json(o);
 });
 
 // Ye catch-all HAMESHA sabse last mein (saare routes ke neeche)
