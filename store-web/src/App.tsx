@@ -1,8 +1,16 @@
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { Layout, NotFoundPage, ProtectedRoute } from "./components/Layout";
+import { LoginPage } from "./pages/LoginPage";
+import { OrdersPage } from "./pages/OrdersPage";
+import { OrderDetailPage } from "./pages/OrderDetailPage";
+import { ProfilePage } from "./pages/ProfilePage";
+import { Clock as ClockIcon, Store } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
-import { Clock as ClockIcon, ShieldCheck, ShoppingBag, Store, User } from "lucide-react";
 import { apiClient } from "./api/client";
 import type { paths } from "./api/schema";
+
+export { LoginPage } from "./pages/LoginPage";
 
 type ClockResponse = paths["/api/v1/clock"]["get"]["responses"][200]["content"]["application/json"];
 
@@ -36,7 +44,7 @@ export function ClockPage() {
         <div className="bg-navy-900 text-white p-6 sm:p-8 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">NestKart Playground</h1>
-            <p className="text-teal-100 text-sm mt-1">Stage 2 — Web Skeleton & Typed Contract</p>
+            <p className="text-teal-100 text-sm mt-1">Stage 6 — Customer Portal & Live Store API</p>
           </div>
           <div className="h-12 w-12 rounded-lg bg-teal-600/30 flex items-center justify-center border border-teal-500/40">
             <ClockIcon className="h-6 w-6 text-teal-100" />
@@ -82,39 +90,7 @@ export function ClockPage() {
               </div>
             )}
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
-              <span className="text-xs text-slate-500">API Port</span>
-              <p className="font-semibold text-slate-800 mt-1">8000</p>
-            </div>
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
-              <span className="text-xs text-slate-500">Agent Port</span>
-              <p className="font-semibold text-slate-800 mt-1">8001</p>
-            </div>
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
-              <span className="text-xs text-slate-500">Web Port</span>
-              <p className="font-semibold text-slate-800 mt-1">5173</p>
-            </div>
-          </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-export function LoginPage() {
-  return (
-    <div className="max-w-md mx-auto py-16 px-4">
-      <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm text-center">
-        <div className="h-12 w-12 rounded-full bg-navy-100 text-navy-800 flex items-center justify-center mx-auto mb-4">
-          <User className="h-6 w-6" />
-        </div>
-        <h1 className="text-xl font-bold text-navy-900">Login Placeholder</h1>
-        <p className="text-sm text-slate-500 mt-2">Authentication flows will be built in Stage 3.</p>
-        <Link to="/" className="inline-block mt-6 text-sm text-teal-600 hover:text-teal-700 font-medium">
-          &larr; Back to Home
-        </Link>
       </div>
     </div>
   );
@@ -127,55 +103,68 @@ export function SellerPage() {
         <div className="h-12 w-12 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center mx-auto mb-4">
           <Store className="h-6 w-6" />
         </div>
-        <h1 className="text-xl font-bold">Seller Console Placeholder</h1>
-        <p className="text-sm text-slate-400 mt-2">Seller management dashboards will be built in Stage 13.</p>
-        <Link to="/" className="inline-block mt-6 text-sm text-teal-400 hover:text-teal-300 font-medium">
-          &larr; Back to Home
-        </Link>
+        <h1 className="text-xl font-bold">Seller Console</h1>
+        <p className="text-sm text-slate-400 mt-2">
+          Seller management dashboards and approvals will be built in Stage 13.
+        </p>
       </div>
     </div>
   );
 }
 
+function HomeRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role.startsWith("seller")) return <Navigate to="/seller" replace />;
+  return <Navigate to="/orders" replace />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col bg-slate-50">
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-          <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-            <Link to="/" className="flex items-center space-x-2 font-bold text-navy-900 text-lg">
-              <ShoppingBag className="h-5 w-5 text-teal-600" />
-              <span>NestKart</span>
-            </Link>
-
-            <nav className="flex items-center space-x-6 text-sm font-medium">
-              <Link to="/" className="text-slate-600 hover:text-navy-900 transition-colors">
-                Customer Home
-              </Link>
-              <Link to="/login" className="text-slate-600 hover:text-navy-900 transition-colors">
-                Login
-              </Link>
-              <Link to="/seller" className="text-slate-600 hover:text-navy-900 transition-colors flex items-center space-x-1">
-                <ShieldCheck className="h-4 w-4 text-teal-600" />
-                <span>Seller Console</span>
-              </Link>
-            </nav>
-          </div>
-        </header>
-
-        <main className="flex-1">
+      <AuthProvider>
+        <Layout>
           <Routes>
-            <Route path="/" element={<ClockPage />} />
+            <Route path="/" element={<HomeRedirect />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/seller" element={<SellerPage />} />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute allowedRoles={["customer"]}>
+                  <OrdersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/:orderId"
+              element={
+                <ProtectedRoute allowedRoles={["customer"]}>
+                  <OrderDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/seller"
+              element={
+                <ProtectedRoute allowedRoles={["seller_owner", "seller_staff"]}>
+                  <SellerPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/clock" element={<ClockPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
-        </main>
-
-        <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
-          NestKart Playground &bull; Simulated Environment &bull; Stage 2
-        </footer>
-      </div>
+        </Layout>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
-

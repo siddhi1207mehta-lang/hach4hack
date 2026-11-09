@@ -3,11 +3,11 @@
 Purpose: one place where a new AI session or teammate learns what exists, what broke, how it was fixed and why decisions were made. Keep it short, true and current. Updated at the end of EVERY stage.
 
 ## 1. Snapshot (update every stage)
-- Last updated: 2026-11-09 20:00 IST
-- Current phase and stage: Phase 1, Stage 5 completed (Read-only store endpoints)
+- Last updated: 2026-11-09 20:50 IST
+- Current phase and stage: Phase 1, Stage 6 completed (Customer portal and chat widget shell)
 - Last green gate: none. Last git tag: none
 - Run: just dev (web 5173, api 8000, agent placeholder 8001)
-- Test: just test (50 passed), just lint (clean), store-web npm run lint (clean), npm test (2 passed), npm run build (clean), just verify-seed (17 passed)
+- Test: just test (50 passed), just lint (clean), store-web npm run lint (clean, 0 warnings), npm test (13 passed), npm run build (clean), just verify-seed (17 passed)
 - Demo logins: password Demo@12345. aarav.mehta@example.test (customer), priya.sharma@nestkart.test (seller owner), kiran.rao@nestkart.test (seller staff)
 - Keys needed right now: none
 
@@ -16,7 +16,7 @@ Purpose: one place where a new AI session or teammate learns what exists, what b
 - store-api/ : pyproject.toml, uv.lock, db.py (SQLite WAL/foreign_keys/busy_timeout/BEGIN IMMEDIATE recipe)
 - store-api/keys/ : jwt_private.pem, jwt_public.pem (git-ignored RS256 key pair)
 - store-api/tests/ : test_skeleton.py (3 passing tests), test_schema_and_seed.py (5 passing tests), test_auth.py (31 passing tests), test_orders_and_admin.py (11 passing tests)
-- store-web/src/ : App.tsx, App.test.tsx, main.tsx, index.css, api/client.ts, api/schema.d.ts
+- store-web/src/ : App.tsx, App.test.tsx, main.tsx, index.css, vite-env.d.ts, api/client.ts, api/client.test.ts, api/schema.d.ts, context/AuthContext.tsx, hooks/useChatStream.ts, components/ChatWidget.tsx, components/Layout.tsx, pages/LoginPage.tsx, pages/OrdersPage.tsx, pages/OrderDetailPage.tsx, pages/ProfilePage.tsx, utils/money.ts, utils/money.test.ts, utils/date.ts
 - store-web/ : package.json, package-lock.json, vite.config.ts, tailwind.config.js, tsconfig.json
 - agent/ : main.py (placeholder on 8001 with GET /healthz)
 - contracts/ : openapi-store.json (generated from FastAPI app; frozen after Stage 2)
@@ -35,8 +35,22 @@ Purpose: one place where a new AI session or teammate learns what exists, what b
 | D7 | 2026-11-09 | RS256 JWT with public JWKS & opaque rotating refresh cookies with double-submit CSRF | Secure asymmetric tokens; agent holds only public key; browser tokens never stored in localStorage | HS256 shared secret, localStorage tokens |
 | D8 | 2026-11-09 | Generic error messages on login failures ("Invalid email or password") + rate limiting/lockout | Prevents user enumeration and brute force attacks | Specific user-not-found errors |
 | D9 | 2026-11-09 | Uniform 404 with exact identical body for non-owned and missing orders | Prevents IDOR enumeration and timing attacks; logs denial to store_audit | Differentiating 403 on resource routes |
+| D10 | 2026-11-09 | Silent session restoration via rotating httpOnly refresh cookie on mount with memory-only access token | Complies with strict rule against tokens in localStorage/sessionStorage while providing seamless UX on reload | localStorage token storage |
 
 ## 4. Build log (newest first)
+### Stage 6 — Customer portal (read-only) and chat widget shell — 2026-11-09
+- Built: Customer portal and chat widget shell conforming to spec sections 9.1, 9.2, 9.3, 9.6, 9.7 and 16.
+  - In-memory token management with `openapi-fetch` wrapper: adds Authorization and X-Request-ID, double-submit CSRF cookie validation, and single-attempt automatic refresh on 401 without infinite loops.
+  - Silent session restore on mount via rotating httpOnly cookie.
+  - Pages: Login (with DEMO quick-login for 5 customers and 2 sellers, lockout/error messaging), My Orders (status chips, relative IST dates, rupee money formatting, shipment badges, search, skeleton, empty and error-retry states), Order detail (items with prices and discount allocation, shipment timeline with delayed notice, track, disabled return, and ask support buttons; uniform "Order not found" on unowned/missing orders), Profile.
+  - Role-based auth guards, route error boundaries, 404 page.
+  - Floating bottom-right chat widget: header 'SellerShield Assistant' with AI disclosure, Guided mode banner fallback, 4 quick actions (Track order, Start a return, Refund status, Talk to a human), 1,000-character counter limit, and plain-text/DOMPurify sanitized markdown rendering (no raw HTML).
+  - SSE hook built on `@microsoft/fetch-event-source` targeting `/agent/v1/chat/stream` with reconnect, abort, and graceful Guided mode fallback.
+  - Vitest unit tests for money formatting (89900 -> ₹899.00) and API client refresh-once retry behavior.
+- Files: store-web/src/utils/money.ts, store-web/src/utils/money.test.ts, store-web/src/utils/date.ts, store-web/src/api/client.ts, store-web/src/api/client.test.ts, store-web/src/context/AuthContext.tsx, store-web/src/hooks/useChatStream.ts, store-web/src/components/ChatWidget.tsx, store-web/src/components/Layout.tsx, store-web/src/pages/LoginPage.tsx, store-web/src/pages/OrdersPage.tsx, store-web/src/pages/OrderDetailPage.tsx, store-web/src/pages/ProfilePage.tsx, store-web/src/App.tsx, store-web/src/vite-env.d.ts, store-web/vite.config.ts
+- Tests: 13 Vitest tests passed (money formatting, API client refresh-once, router placeholders); 50 pytest passed; store-web lint (0 warnings) and build passed; just lint and verify-seed passed.
+- Commit: pending git commit
+
 ### Stage 5 — Read-only store endpoints — 2026-11-09
 - Built: Orders, shipments, refundable calculation, seller views, and audit logging for denied access conforming to spec sections 4, 5, 6, 16.
   - `GET /api/v1/orders` (own orders only via customer token, cursor pagination with limit and base64 cursor, status filter, search).

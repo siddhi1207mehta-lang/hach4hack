@@ -128,3 +128,4 @@ class CustomerAdminSummaryResponse(BaseModel):
     total_orders: int
     total_spend_paise: int
     total_refunded_paise: int
+

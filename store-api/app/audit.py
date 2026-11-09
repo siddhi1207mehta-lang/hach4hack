@@ -30,3 +30,4 @@ def log_audit(
     )
     session.add(audit)
     session.commit()
+
