@@ -23,6 +23,7 @@ from app.middleware import (
     SecurityHeadersMiddleware,
 )
 from app.orders import router as orders_router
+from app.returns import router as returns_router
 
 
 class ClockResponse(BaseModel):
@@ -77,8 +78,9 @@ app.add_middleware(RequestIdLoggingMiddleware)
 # Auth router
 app.include_router(auth_router)
 
-# Orders and Admin routers
+# Orders, Returns, and Admin routers
 app.include_router(orders_router)
+app.include_router(returns_router)
 app.include_router(admin_router)
 
 # Custom Error Handlers

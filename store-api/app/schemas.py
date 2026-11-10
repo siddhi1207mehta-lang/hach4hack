@@ -129,3 +129,56 @@ class CustomerAdminSummaryResponse(BaseModel):
     total_spend_paise: int
     total_refunded_paise: int
 
+
+class ReturnItemCreate(BaseModel):
+    item_id: str
+    qty: int = 1
+    condition_note: Optional[str] = None
+
+
+class ReturnCreateRequest(BaseModel):
+    items: list[ReturnItemCreate]
+    reason_code: str
+    reason_text: str
+    resolution: str = "refund"  # refund or store_credit
+
+
+class ReturnItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    return_id: str
+    item_id: str
+    qty: int
+    condition_note: Optional[str] = None
+    status: str
+
+
+class ReturnResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    return_id: str
+    order_id: str
+    customer_id: str
+    status: str
+    reason_code: str
+    reason_text: str
+    resolution: str
+    requested_via: str = "chat"
+    approved_by: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    version: int = 1
+    items: list[ReturnItemResponse] = []
+
+
+class ReturnTransitionRequest(BaseModel):
+    to: str
+    reason: Optional[str] = None
+
+
+class ReturnInspectRequest(BaseModel):
+    result: Optional[str] = None  # "ok" or "failed"
+    to: Optional[str] = None  # "inspected_ok" or "inspection_failed"
+    note: Optional[str] = None
+

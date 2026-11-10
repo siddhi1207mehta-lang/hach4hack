@@ -214,6 +214,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/{order_id}/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a return for an order
+         * @description Customer creates a return on their own delivered order.
+         *
+         *     Checks: ownership (uniform 404), delivered status, qty limits,
+         *     one active return per item, idempotency replay / mismatch.
+         *     reason_text is stored as plain data and never executed.
+         */
+        post: operations["create_return_api_v1_orders__order_id__returns_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List returns
+         * @description Customer: own only.  Seller / agent-monitor: all.
+         */
+        get: operations["list_returns_api_v1_returns_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/returns/{return_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get return details
+         * @description Customer: own only (uniform 404 + audit).  Seller: any.
+         */
+        get: operations["get_return_api_v1_returns__return_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/returns/{return_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a return request (customer, before approval)
+         * @description Customer cancels own return; only while status is 'requested'.
+         */
+        post: operations["cancel_return_api_v1_returns__return_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/returns/{return_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Transition return state
+         * @description Drive return state along the state-machine table.
+         *
+         *     Seller token: any allowed edge.
+         *     Agent-executor: only requested -> approved/rejected,
+         *                     within the autonomy cap from store_settings.
+         */
+        post: operations["transition_return_api_v1_returns__return_id__transition_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/orders": {
         parameters: {
             query?: never;
@@ -259,6 +367,48 @@ export interface paths {
         get: operations["admin_get_customer_summary_api_v1_admin_customers__customer_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/returns/{return_id}/receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark returned item received at warehouse (seller only)
+         * @description Seller receives return at warehouse.
+         *     Transitions return from in_transit_back to received.
+         */
+        post: operations["admin_receive_return_api_v1_admin_returns__return_id__receive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/returns/{return_id}/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record inspection result for return (seller only)
+         * @description Seller records inspection result for received return.
+         *     Transitions return from received to inspected_ok / inspection_failed.
+         */
+        post: operations["admin_inspect_return_api_v1_admin_returns__return_id__inspect_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -580,6 +730,65 @@ export interface components {
             items: components["schemas"]["RefundableItemResponse"][];
             /** Max Refundable Paise */
             max_refundable_paise: number;
+        };
+        /** ReturnItemResponse */
+        ReturnItemResponse: {
+            /** Id */
+            id: number;
+            /** Return Id */
+            return_id: string;
+            /** Item Id */
+            item_id: string;
+            /** Qty */
+            qty: number;
+            /** Condition Note */
+            condition_note?: string | null;
+            /** Status */
+            status: string;
+        };
+        /** ReturnResponse */
+        ReturnResponse: {
+            /** Return Id */
+            return_id: string;
+            /** Order Id */
+            order_id: string;
+            /** Customer Id */
+            customer_id: string;
+            /** Status */
+            status: string;
+            /** Reason Code */
+            reason_code: string;
+            /** Reason Text */
+            reason_text: string;
+            /** Resolution */
+            resolution: string;
+            /**
+             * Requested Via
+             * @default chat
+             */
+            requested_via: string;
+            /** Approved By */
+            approved_by?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            /**
+             * Items
+             * @default []
+             */
+            items: components["schemas"]["ReturnItemResponse"][];
         };
         /** ShipmentEventResponse */
         ShipmentEventResponse: {
@@ -1023,6 +1232,156 @@ export interface operations {
             };
         };
     };
+    create_return_api_v1_orders__order_id__returns_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_returns_api_v1_returns_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnResponse"][];
+                };
+            };
+        };
+    };
+    get_return_api_v1_returns__return_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                return_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_return_api_v1_returns__return_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                return_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_return_api_v1_returns__return_id__transition_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                return_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_list_orders_api_v1_admin_orders_get: {
         parameters: {
             query?: {
@@ -1107,6 +1466,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CustomerAdminSummaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_receive_return_api_v1_admin_returns__return_id__receive_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                return_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_inspect_return_api_v1_admin_returns__return_id__inspect_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                return_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnResponse"];
                 };
             };
             /** @description Validation Error */
