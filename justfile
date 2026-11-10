@@ -56,7 +56,7 @@ token email:
 
 # Money-path smoke test
 smoke-money:
-    python -c "print('not built yet')"
+    uv run --project store-api python scripts/smoke_money.py
 
 # Webhook listener helper
 webhook-listener:

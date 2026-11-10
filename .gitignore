@@ -1,16 +1,12 @@
-.env
-*.db
-*.db-wal
-*.db-shm
-data/
-uploads/
-keys/
-.venv/
+# Dependencies & build artifacts
 node_modules/
 dist/
 __pycache__/
+*.pyc
+.venv/
 .DS_Store
 *.bundle
 .uv_cache/
 .uv_python/
-
+*.db-wal
+*.db-shm

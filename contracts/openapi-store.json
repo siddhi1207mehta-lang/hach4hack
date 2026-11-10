@@ -789,6 +789,340 @@
         }
       }
     },
+    "/api/v1/orders/{order_id}/refund-reservations": {
+      "post": {
+        "tags": [
+          "Refunds"
+        ],
+        "summary": "Create an atomic refund reservation hold",
+        "description": "Executor or seller creates a 'reserved' hold atomically.\nAmount must not exceed store's own max_refundable calculation.\nCash-on-delivery orders require store_credit or upi_payout (SC-16).",
+        "operationId": "create_refund_reservation_api_v1_orders__order_id__refund_reservations_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/refunds/{refund_id}/authorize": {
+      "post": {
+        "tags": [
+          "Refunds"
+        ],
+        "summary": "Authorize a reserved refund (seller only)",
+        "description": "Seller token only. Staff up to Rs 2,000 (200,000 paise), owner above.\nStores authorized_by, authorized_amount_paise, authorized_at.",
+        "operationId": "authorize_refund_api_v1_refunds__refund_id__authorize_post",
+        "parameters": [
+          {
+            "name": "refund_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Refund Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/refunds/{refund_id}/release": {
+      "post": {
+        "tags": [
+          "Refunds"
+        ],
+        "summary": "Release refund to SimPay for processing and completion",
+        "description": "Executor or seller releases a refund.\n- Service-token release accepted ONLY if total <= autonomy cap OR stored\n  authorization of sufficient role exists, AND simulated-IST-day total\n  of service-token releases stays <= daily cap; otherwise 409 limit_exceeded.\n- Requires payment_status paid (or cod_collected).\n- Moves to 'processing'; SimPay completes after ~3s real time.",
+        "operationId": "release_refund_api_v1_refunds__refund_id__release_post",
+        "parameters": [
+          {
+            "name": "refund_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Refund Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/refunds/{refund_id}/cancel-reservation": {
+      "post": {
+        "tags": [
+          "Refunds"
+        ],
+        "summary": "Cancel a refund reservation hold",
+        "description": "Executor or seller releases a 'reserved' hold back to cancelled.",
+        "operationId": "cancel_refund_reservation_api_v1_refunds__refund_id__cancel_reservation_post",
+        "parameters": [
+          {
+            "name": "refund_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Refund Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/refunds/{refund_id}": {
+      "get": {
+        "tags": [
+          "Refunds"
+        ],
+        "summary": "Get refund details",
+        "description": "Customer: own only (uniform 404 + audit denial). Seller/Executor: any.",
+        "operationId": "get_refund_api_v1_refunds__refund_id__get",
+        "parameters": [
+          {
+            "name": "refund_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Refund Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{customer_id}/refund-summary": {
+      "get": {
+        "tags": [
+          "Refunds"
+        ],
+        "summary": "Get customer refund summary over days window",
+        "description": "Executor or seller only. Customer gets 403.",
+        "operationId": "get_customer_refund_summary_api_v1_customers__customer_id__refund_summary_get",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Customer Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerRefundSummaryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/orders": {
       "get": {
         "tags": [
@@ -1100,6 +1434,66 @@
         }
       }
     },
+    "/api/v1/admin/settings": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get store settings (seller_owner only)",
+        "operationId": "get_store_settings_api_v1_admin_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreSettingsResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Update store settings (seller_owner only)",
+        "operationId": "update_store_settings_api_v1_admin_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreSettingsUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreSettingsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/healthz": {
       "get": {
         "tags": [
@@ -1242,6 +1636,44 @@
           "total_refunded_paise"
         ],
         "title": "CustomerAdminSummaryResponse"
+      },
+      "CustomerRefundSummaryResponse": {
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "title": "Customer Id"
+          },
+          "days": {
+            "type": "integer",
+            "title": "Days"
+          },
+          "total_refunds_paise": {
+            "type": "integer",
+            "title": "Total Refunds Paise"
+          },
+          "refund_count": {
+            "type": "integer",
+            "title": "Refund Count"
+          },
+          "active_holds_paise": {
+            "type": "integer",
+            "title": "Active Holds Paise"
+          },
+          "active_hold_count": {
+            "type": "integer",
+            "title": "Active Hold Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer_id",
+          "days",
+          "total_refunds_paise",
+          "refund_count",
+          "active_holds_paise",
+          "active_hold_count"
+        ],
+        "title": "CustomerRefundSummaryResponse"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1700,6 +2132,61 @@
             ],
             "title": "Gateway Ref"
           },
+          "simulated": {
+            "type": "boolean",
+            "title": "Simulated",
+            "default": true
+          },
+          "authorized_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authorized By"
+          },
+          "authorized_amount_paise": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authorized Amount Paise"
+          },
+          "authorized_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authorized At"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "default": 1
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -2039,6 +2526,80 @@
           "delayed"
         ],
         "title": "ShipmentResponse"
+      },
+      "StoreSettingsResponse": {
+        "properties": {
+          "autonomy_cap_paise": {
+            "type": "integer",
+            "title": "Autonomy Cap Paise"
+          },
+          "autonomy_daily_cap_paise": {
+            "type": "integer",
+            "title": "Autonomy Daily Cap Paise"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "autonomy_cap_paise",
+          "autonomy_daily_cap_paise"
+        ],
+        "title": "StoreSettingsResponse"
+      },
+      "StoreSettingsUpdateRequest": {
+        "properties": {
+          "autonomy_cap_paise": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autonomy Cap Paise"
+          },
+          "autonomy_daily_cap_paise": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autonomy Daily Cap Paise"
+          }
+        },
+        "type": "object",
+        "title": "StoreSettingsUpdateRequest"
       },
       "TokenRequest": {
         "properties": {

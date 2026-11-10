@@ -111,8 +111,55 @@ class RefundResponse(BaseModel):
     method: str
     status: str
     gateway_ref: Optional[str] = None
+    simulated: bool = True
+    authorized_by: Optional[str] = None
+    authorized_amount_paise: Optional[int] = None
+    authorized_at: Optional[datetime] = None
+    failure_reason: Optional[str] = None
+    version: int = 1
     created_at: datetime
     updated_at: datetime
+
+
+class StoreSettingsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    autonomy_cap_paise: int
+    autonomy_daily_cap_paise: int
+    updated_by: Optional[str] = None
+    updated_at: Optional[datetime] = None
+    version: int = 1
+
+
+class StoreSettingsUpdateRequest(BaseModel):
+    autonomy_cap_paise: Optional[int] = None
+    autonomy_daily_cap_paise: Optional[int] = None
+
+
+class RefundReservationRequest(BaseModel):
+    amount_paise: int
+    return_id: Optional[str] = None
+    method: str = "original"  # "original", "store_credit", "upi_payout"
+
+
+class RefundAuthorizeRequest(BaseModel):
+    amount_paise: Optional[int] = None
+    note: Optional[str] = None
+
+
+class RefundReleaseRequest(BaseModel):
+    note: Optional[str] = None
+
+
+class CustomerRefundSummaryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    customer_id: str
+    days: int
+    total_refunds_paise: int
+    refund_count: int
+    active_holds_paise: int
+    active_hold_count: int
 
 
 class CustomerAdminSummaryResponse(BaseModel):

@@ -322,6 +322,134 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/{order_id}/refund-reservations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create an atomic refund reservation hold
+         * @description Executor or seller creates a 'reserved' hold atomically.
+         *     Amount must not exceed store's own max_refundable calculation.
+         *     Cash-on-delivery orders require store_credit or upi_payout (SC-16).
+         */
+        post: operations["create_refund_reservation_api_v1_orders__order_id__refund_reservations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/refunds/{refund_id}/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Authorize a reserved refund (seller only)
+         * @description Seller token only. Staff up to Rs 2,000 (200,000 paise), owner above.
+         *     Stores authorized_by, authorized_amount_paise, authorized_at.
+         */
+        post: operations["authorize_refund_api_v1_refunds__refund_id__authorize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/refunds/{refund_id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Release refund to SimPay for processing and completion
+         * @description Executor or seller releases a refund.
+         *     - Service-token release accepted ONLY if total <= autonomy cap OR stored
+         *       authorization of sufficient role exists, AND simulated-IST-day total
+         *       of service-token releases stays <= daily cap; otherwise 409 limit_exceeded.
+         *     - Requires payment_status paid (or cod_collected).
+         *     - Moves to 'processing'; SimPay completes after ~3s real time.
+         */
+        post: operations["release_refund_api_v1_refunds__refund_id__release_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/refunds/{refund_id}/cancel-reservation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a refund reservation hold
+         * @description Executor or seller releases a 'reserved' hold back to cancelled.
+         */
+        post: operations["cancel_refund_reservation_api_v1_refunds__refund_id__cancel_reservation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/refunds/{refund_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get refund details
+         * @description Customer: own only (uniform 404 + audit denial). Seller/Executor: any.
+         */
+        get: operations["get_refund_api_v1_refunds__refund_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/{customer_id}/refund-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get customer refund summary over days window
+         * @description Executor or seller only. Customer gets 403.
+         */
+        get: operations["get_customer_refund_summary_api_v1_customers__customer_id__refund_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/orders": {
         parameters: {
             query?: never;
@@ -415,6 +543,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get store settings (seller_owner only) */
+        get: operations["get_store_settings_api_v1_admin_settings_get"];
+        /** Update store settings (seller_owner only) */
+        put: operations["update_store_settings_api_v1_admin_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -502,6 +648,21 @@ export interface components {
             total_spend_paise: number;
             /** Total Refunded Paise */
             total_refunded_paise: number;
+        };
+        /** CustomerRefundSummaryResponse */
+        CustomerRefundSummaryResponse: {
+            /** Customer Id */
+            customer_id: string;
+            /** Days */
+            days: number;
+            /** Total Refunds Paise */
+            total_refunds_paise: number;
+            /** Refund Count */
+            refund_count: number;
+            /** Active Holds Paise */
+            active_holds_paise: number;
+            /** Active Hold Count */
+            active_hold_count: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -693,6 +854,24 @@ export interface components {
             /** Gateway Ref */
             gateway_ref?: string | null;
             /**
+             * Simulated
+             * @default true
+             */
+            simulated: boolean;
+            /** Authorized By */
+            authorized_by?: string | null;
+            /** Authorized Amount Paise */
+            authorized_amount_paise?: number | null;
+            /** Authorized At */
+            authorized_at?: string | null;
+            /** Failure Reason */
+            failure_reason?: string | null;
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            /**
              * Created At
              * Format: date-time
              */
@@ -833,6 +1012,29 @@ export interface components {
              * @default []
              */
             events: components["schemas"]["ShipmentEventResponse"][];
+        };
+        /** StoreSettingsResponse */
+        StoreSettingsResponse: {
+            /** Autonomy Cap Paise */
+            autonomy_cap_paise: number;
+            /** Autonomy Daily Cap Paise */
+            autonomy_daily_cap_paise: number;
+            /** Updated By */
+            updated_by?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+        };
+        /** StoreSettingsUpdateRequest */
+        StoreSettingsUpdateRequest: {
+            /** Autonomy Cap Paise */
+            autonomy_cap_paise?: number | null;
+            /** Autonomy Daily Cap Paise */
+            autonomy_daily_cap_paise?: number | null;
         };
         /** TokenRequest */
         TokenRequest: {
@@ -1382,6 +1584,202 @@ export interface operations {
             };
         };
     };
+    create_refund_reservation_api_v1_orders__order_id__refund_reservations_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    authorize_refund_api_v1_refunds__refund_id__authorize_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                refund_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    release_refund_api_v1_refunds__refund_id__release_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                refund_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_refund_reservation_api_v1_refunds__refund_id__cancel_reservation_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                refund_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_refund_api_v1_refunds__refund_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refund_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_customer_refund_summary_api_v1_customers__customer_id__refund_summary_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                customer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerRefundSummaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_list_orders_api_v1_admin_orders_get: {
         parameters: {
             query?: {
@@ -1532,6 +1930,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReturnResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_store_settings_api_v1_admin_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreSettingsResponse"];
+                };
+            };
+        };
+    };
+    update_store_settings_api_v1_admin_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreSettingsUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreSettingsResponse"];
                 };
             };
             /** @description Validation Error */

@@ -24,7 +24,7 @@ from app.idempotency import (
     require_idempotency_key,
     save_idempotency_record,
 )
-from app.models import Customer, Order, OrderItem, Refund, Return
+from app.models import Customer, Order, OrderItem, Refund, Return, StoreSettings
 from app.schemas import (
     CustomerAdminSummaryResponse,
     OrderItemResponse,
@@ -32,6 +32,8 @@ from app.schemas import (
     OrderResponse,
     ReturnInspectRequest,
     ReturnResponse,
+    StoreSettingsResponse,
+    StoreSettingsUpdateRequest,
 )
 
 router = APIRouter(prefix="/api/v1/admin", tags=["Admin"])
@@ -460,3 +462,85 @@ async def admin_inspect_return(
         session.commit()
         session.refresh(ret)
         return ReturnResponse.model_validate(ret)
+
+
+# ---------------------------------------------------------------------------
+# Store Settings (seller_owner only)
+# ---------------------------------------------------------------------------
+@router.get(
+    "/settings",
+    response_model=StoreSettingsResponse,
+    summary="Get store settings (seller_owner only)",
+)
+def get_store_settings(
+    _: dict[str, Any] = Depends(require_role("seller_owner")),
+) -> StoreSettingsResponse:
+    with Session(db.engine) as session:
+        settings_row = session.get(StoreSettings, 1)
+        if settings_row is None:
+            settings_row = StoreSettings(
+                id=1,
+                autonomy_cap_paise=50000,
+                autonomy_daily_cap_paise=500000,
+                updated_at=Clock.now(),
+            )
+            session.add(settings_row)
+            session.commit()
+            session.refresh(settings_row)
+        return StoreSettingsResponse.model_validate(settings_row)
+
+
+@router.put(
+    "/settings",
+    response_model=StoreSettingsResponse,
+    summary="Update store settings (seller_owner only)",
+)
+def update_store_settings(
+    req: StoreSettingsUpdateRequest,
+    request: Request,
+    principal: dict[str, Any] = Depends(require_role("seller_owner")),
+) -> StoreSettingsResponse:
+    if req.autonomy_cap_paise is not None and req.autonomy_cap_paise < 0:
+        raise ValidationErrorException(message="autonomy_cap_paise cannot be negative")
+    if req.autonomy_daily_cap_paise is not None and req.autonomy_daily_cap_paise < 0:
+        raise ValidationErrorException(message="autonomy_daily_cap_paise cannot be negative")
+
+    actor = principal.get("sub") or "unknown"
+    req_id = (
+        getattr(request.state, "request_id", None)
+        or request.headers.get("X-Request-ID", "unknown")
+    )
+
+    with Session(db.engine) as session:
+        settings_row = session.get(StoreSettings, 1)
+        if settings_row is None:
+            settings_row = StoreSettings(
+                id=1,
+                autonomy_cap_paise=50000,
+                autonomy_daily_cap_paise=500000,
+            )
+            session.add(settings_row)
+
+        if req.autonomy_cap_paise is not None:
+            settings_row.autonomy_cap_paise = req.autonomy_cap_paise
+        if req.autonomy_daily_cap_paise is not None:
+            settings_row.autonomy_daily_cap_paise = req.autonomy_daily_cap_paise
+
+        now = Clock.now()
+        settings_row.updated_by = actor
+        settings_row.updated_at = now
+        settings_row.version += 1
+
+        log_audit(
+            session=session,
+            request_id=req_id,
+            actor=actor,
+            action="update_settings",
+            resource="admin/settings",
+            outcome="success",
+        )
+
+        session.commit()
+        session.refresh(settings_row)
+        return StoreSettingsResponse.model_validate(settings_row)
+

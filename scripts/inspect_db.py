@@ -110,6 +110,27 @@ def inspect_db() -> None:
             else:
                 print(f"{sc:<8} {order_id:<10} NOT FOUND")
 
+        # Refunds breakdown
+        refund_count = session.scalar(select(func.count(Refund.refund_id)))
+        if refund_count > 0:
+            print(f"\n=== Refunds Rows ({refund_count} total) ===")
+            print(
+                f"{'Refund ID':<12} {'Order ID':<10} {'Amount (p)':<12} {'Status':<12} "
+                f"{'Auth By':<28} {'Auth Amount':<12} {'Gateway Ref':<16} {'Simulated'}"
+            )
+            print("-" * 110)
+            refund_rows = session.scalars(
+                select(Refund).order_by(Refund.created_at.desc()).limit(15)
+            ).all()
+            for r in refund_rows:
+                auth_by = r.authorized_by or "-"
+                auth_amt = str(r.authorized_amount_paise) if r.authorized_amount_paise else "-"
+                gw = r.gateway_ref or "-"
+                print(
+                    f"{r.refund_id:<12} {r.order_id:<10} {r.amount_paise:<12} {r.status:<12} "
+                    f"{auth_by:<28} {auth_amt:<12} {gw:<16} True"
+                )
+
         # Store audit log entries if any
         audit_count = session.scalar(select(func.count(StoreAudit.id)))
         if audit_count > 0:
