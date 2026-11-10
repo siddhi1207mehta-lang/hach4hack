@@ -3,25 +3,25 @@
 Purpose: one place where a new AI session or teammate learns what exists, what broke, how it was fixed and why decisions were made. Keep it short, true and current. Updated at the end of EVERY stage.
 
 ## 1. Snapshot (update every stage)
-- Last updated: 2026-11-10 10:05 IST
-- Current phase and stage: Phase 2, Stage 7 completed (Returns, state machine and idempotency)
+- Last updated: 2026-11-10 12:45 IST
+- Current phase and stage: Phase 2, Stage 8 completed (Refunds, SimPay and money limits)
 - Last green gate: none. Last git tag: none
 - Run: just dev (web 5173, api 8000, agent placeholder 8001)
-- Test: just test (160 passed), just lint (clean), store-web npm run lint (clean, 0 warnings), npm test (13 passed), npm run build (clean), just verify-seed (17 passed)
+- Test: just test (169 passed), just lint (clean), store-web npm run lint (clean, 0 warnings), npm test (13 passed), npm run build (clean), just smoke-money (ALL PASS, 0 FAIL)
 - Demo logins: password Demo@12345. aarav.mehta@example.test (customer), priya.sharma@nestkart.test (seller owner), kiran.rao@nestkart.test (seller staff)
 - Keys needed right now: none
 
 ## 2. Architecture map (fill in as you build)
-- store-api/app/ : main.py, config.py, clock.py, errors.py, middleware.py, logging.py, models.py, discount.py, auth.py, deps.py, audit.py, schemas.py, orders.py, admin.py, idempotency.py, returns.py
+- store-api/app/ : main.py, config.py, clock.py, errors.py, middleware.py, logging.py, models.py, discount.py, auth.py, deps.py, audit.py, schemas.py, orders.py, admin.py, idempotency.py, returns.py, refunds.py, simpay.py
 - store-api/ : pyproject.toml, uv.lock, db.py (SQLite WAL/foreign_keys/busy_timeout/BEGIN IMMEDIATE recipe)
 - store-api/keys/ : jwt_private.pem, jwt_public.pem (git-ignored RS256 key pair)
-- store-api/tests/ : test_skeleton.py (3 passing tests), test_schema_and_seed.py (5 passing tests), test_auth.py (31 passing tests), test_orders_and_admin.py (11 passing tests), test_returns_and_state_machine.py (110 passing tests)
+- store-api/tests/ : test_skeleton.py (3 passing tests), test_schema_and_seed.py (5 passing tests), test_auth.py (31 passing tests), test_orders_and_admin.py (11 passing tests), test_returns_and_state_machine.py (110 passing tests), test_refunds_and_money_safety.py (9 passing tests)
 - store-web/src/ : App.tsx, App.test.tsx, main.tsx, index.css, vite-env.d.ts, api/client.ts, api/client.test.ts, api/schema.d.ts, context/AuthContext.tsx, hooks/useChatStream.ts, components/ChatWidget.tsx, components/Layout.tsx, pages/LoginPage.tsx, pages/OrdersPage.tsx, pages/OrderDetailPage.tsx, pages/ProfilePage.tsx, utils/money.ts, utils/money.test.ts, utils/date.ts
 - store-web/ : package.json, package-lock.json, vite.config.ts, tailwind.config.js, tsconfig.json
 - agent/ : main.py (placeholder on 8001 with GET /healthz)
 - contracts/ : openapi-store.json (generated from FastAPI app; frozen after Stage 2)
 - scenarios/seed/ : seed JSON for SC-01 to SC-17 (users, customers, products, orders, order_items, shipments, shipment_events, returns, return_items, refunds, mail_messages, store_settings)
-- scripts/ : export_openapi.py, make_keys.py, dev.py, seed.py, inspect_db.py, verify_seed.py, get_token.py
+- scripts/ : export_openapi.py, make_keys.py, dev.py, seed.py, inspect_db.py, verify_seed.py, get_token.py, smoke_money.py
 
 ## 3. Decisions log
 | # | Date | Decision | Why | Rejected alternatives |
@@ -38,8 +38,27 @@ Purpose: one place where a new AI session or teammate learns what exists, what b
 | D10 | 2026-11-09 | Silent session restoration via rotating httpOnly refresh cookie on mount with memory-only access token | Complies with strict rule against tokens in localStorage/sessionStorage while providing seamless UX on reload | localStorage token storage |
 | D11 | 2026-11-10 | Canonical SHA-256 JSON hashing + DB-backed IdempotencyKey | Eliminates duplicate side-effects while catching payload tampering (409 idempotency_mismatch) safely across restarts | In-memory key caching |
 | D12 | 2026-11-10 | Single in-code state table `RETURN_STATE_TRANSITIONS` for return lifecycle | Single source of truth guaranteeing illegal transitions are strictly rejected across all caller roles | Ad-hoc endpoint condition checks |
+| D13 | 2026-11-10 | Background asyncio task for SimPay ~3s refund completion | Release returns immediate 'processing' response without holding write lock across async sleep; completion commits independently | Synchronous gateway call or long write lock |
+| D14 | 2026-11-10 | Daily service-token release cap calculated from `store_audit` over simulated IST day window | Tracks total service releases without needing an extra schema column in refunds table | In-memory counter or refunds table migration |
 
 ## 4. Build log (newest first)
+### Stage 8 — Refunds, SimPay and the store's money limits — 2026-11-10
+- Built: Complete refund lifecycle, money guardrails, SimPay simulation and store settings RBAC conforming to spec sections 4, 5 (invariants 1 to 10), 6, 7.2, 16.
+  - Store settings RBAC (`GET` and `PUT /api/v1/admin/settings`): `seller_owner` only via `require_role('seller_owner')`. Staff and customers receive 403 Forbidden. Tracks `updated_by` and `updated_at`.
+  - Atomic refund reservation (`POST /api/v1/orders/{id}/refund-reservations`): executor or seller creates a `reserved` hold. Enforces the store's own `max_refundable` calculation per item/order net of active holds (Invariant 2). Rejects over-reservations with 409 `limit_exceeded`. Cash-on-delivery orders require `store_credit` or `upi_payout` (SC-16).
+  - Stored authorization (`POST /api/v1/refunds/{id}/authorize`): seller only. Enforces staff cap of up to ₹2,000 (200,000 paise); amounts above require `seller_owner`. Stores `authorized_by`, `authorized_amount_paise`, `authorized_at`. Idempotent with payload hash checking.
+  - Refund release (`POST /api/v1/refunds/{id}/release`): executor or seller. Requires order payment_status `paid` or `cod_collected`. Service-token release allowed ONLY if amount <= autonomy cap (default ₹500 / 50,000 paise) OR stored authorization of sufficient role exists, AND total service releases in simulated IST day <= daily cap (default ₹5,000 / 500,000 paise); otherwise 409 `limit_exceeded`. Moves status to `processing`.
+  - SimPay integration (`app/simpay.py`): completes refund after ~3s real-time delay via background asyncio task. Generates `SIMPAY-xxxxxx` reference. Every API response carries `simulated = true`. Completes linked return (`inspected_ok` -> `completed`).
+  - Cancellation and views: `POST /api/v1/refunds/{id}/cancel-reservation` (releases reserved hold to `cancelled`), `GET /api/v1/refunds/{id}` (uniform 404 for non-owner customer; seller/executor any), `GET /api/v1/customers/{id}/refund-summary?days=30` (seller/executor only).
+  - Fault switches: `payment.fail_once` (fails release with 503, retry succeeds), `payment.timeout_after_commit` (processing committed in DB before 503 returned, background completion completes truthfully), `payment.down` (immediate 503).
+  - Smoke script (`scripts/smoke_money.py` / `just smoke-money`): full happy path (return -> approve -> pickup -> transit -> receive -> inspect ok -> reserve -> authorize -> release -> wait 3.5s -> completed) + 4 negative attacks (over-reservation, release above cap without authorization, staff authorizing above ₹2,000, idempotency mismatch).
+  - Test suite (`store-api/tests/test_refunds_and_money_safety.py`): 9 tests covering SC-10 cap, over-reservation, SC-16 COD rule, parallel reservations race (Thread-pool Invariant 2 check), autonomy cap with/without auth, staff/owner role limits, daily cap enforcement, fail_once retry, timeout reconciliation, RBAC settings, customer summary.
+- Files: store-api/app/refunds.py, store-api/app/simpay.py, store-api/app/admin.py, store-api/app/schemas.py, store-api/app/main.py, scripts/smoke_money.py, scripts/inspect_db.py, store-api/tests/test_refunds_and_money_safety.py, contracts/openapi-store.json, store-web/src/api/schema.d.ts
+- Tests: 169 pytest passed (9 refunds & money safety, 110 returns & state machine, 11 orders & admin, 31 auth, 5 schema & seed, 3 skeleton); 13 Vitest passed; smoke-money passed (0 FAIL); ruff & eslint clean; vite build clean.
+- Race tests: `just test -k race` run 5 times consecutively — 100% pass rate.
+- Mutation test: bypassing autonomy cap check causes test_autonomy_cap_and_role_limits to fail with 200 != 409.
+- Float check: zero float variables used for money.
+
 ### Stage 7 — Returns, state machine and idempotency — 2026-11-10
 - Built: Returns lifecycle, transition engine, seller receipt & inspection, and full idempotency support conforming to spec sections 5, 6, 16.
   - Idempotency engine (`app/idempotency.py`): validates `Idempotency-Key` header on all mutating POST routes (missing gives 422 `validation_error`). Normalizes payload JSON and computes canonical SHA-256 hash. Replays stored status and payload with zero second effects. Detects changed payloads with 409 `idempotency_mismatch`. Atomic persistence in `idempotency_keys` table.
@@ -112,6 +131,9 @@ Purpose: one place where a new AI session or teammate learns what exists, what b
 ## 5. Bug and fix log (newest first)
 | ID | Date | Symptom (what I saw) | Root cause | Fix | Regression test | Files |
 | --- | --- | --- | --- | --- | --- | --- |
+| B-009 | 2026-11-10 | simpay sqlite3.OperationalError: database is locked | `set_fault` opened a new session with BEGIN IMMEDIATE while caller session in release_refund was still active | Pass optional active session into `set_fault` to reuse the existing transaction | test_fault_fail_once_retry_with_same_key_succeeds | store-api/app/simpay.py, store-api/app/refunds.py |
+| B-008 | 2026-11-10 | test_seed_loads assertion failure (assert 26 == 20) | Test suite inserted orders/refunds into shared DB without removing them | Track created order/refund IDs in module lists and delete test-only rows in module fixture | test_seed_loads | store-api/tests/test_refunds_and_money_safety.py |
+| B-007 | 2026-11-10 | TypeError: can't compare offset-naive and offset-aware datetimes in get_customer_refund_summary | SQLite stores naive UTC datetimes while Clock.now() returns timezone-aware datetime | Strip tzinfo via `replace(tzinfo=None)` before range comparison | test_customer_refund_summary | store-api/app/refunds.py |
 | B-006 | 2026-11-10 | test_seed_loads assertion error (assert 89 == 5) | Parametrized state transition tests inserted temporary rows into store.db without cleanup | Added autouse cleanup fixture and explicit test-teardowns for non-seeded returns | test_seed_loads | store-api/tests/test_returns_and_state_machine.py |
 | B-005 | 2026-11-09 | AttributeError: 'list' object has no attribute 'split' in get_current_principal | _mint_service_token payload scopes were list while principal extraction called .split() | Handle both list and string types for scopes claim | test_seller_can_read_any_order | store-api/app/auth.py |
 | B-004 | 2026-11-09 | TypeError: can't subtract offset-naive and offset-aware datetimes | SQLite DateTime columns are naive datetimes while Clock.now() is UTC timezone-aware | Convert both datetimes via `_to_utc` helper and use naive datetimes for SQL range filters | test_orders_and_admin.py | store-api/app/admin.py, store-api/app/orders.py |
